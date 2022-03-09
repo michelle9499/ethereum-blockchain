@@ -26,7 +26,7 @@ const EthereumComponent = (props) => {
                         options={options}
                     />
                 </div>
-                <div className='row'>
+                <div className='row my-4'>
                     <div className='col-6'>
                         <Card>
                             <Card.Body>
@@ -34,11 +34,18 @@ const EthereumComponent = (props) => {
                                 <hr />
                                 <Table responsive>
                                     <tbody>
-                                        <tr>
-                                            <td>1433630</td>
-                                            <td>Miner Hiveon Pol</td>
-                                            <td>2.09742 Eth</td>
-                                        </tr>
+                                        {props.latestBlockList.map((r, i) => (
+                                            <tr key={i}>
+                                                <td>
+                                                    <span>{r.number}</span> 
+                                                    <p className='mb-0 text-secondary small'>{r.time}</p>
+                                                </td>
+                                                <td>
+                                                    <p className='mb-0'>Miner <span>({r.miner})</span></p> 
+                                                    <p className='mb-0 text-secondary small'>{r.transactionCount} txns</p>
+                                                </td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </Table>
                             </Card.Body>
