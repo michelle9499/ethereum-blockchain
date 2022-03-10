@@ -36,7 +36,9 @@ const EthereumComponent = (props) => {
                                         {props.latestBlockList.map((r, i) => (
                                             <tr key={i}>
                                                 <td>
-                                                    <Link to={{pathname:'/details', search:`?hash=${r.hash}`}} onClick={() => props.getBlockDetailsByHash(r.hash)}>{r.number}</Link>
+                                                    <Link to={{pathname:'/block-details', search:`?block=${r.hash}`}} 
+                                                        onClick={() => props.getBlockDetailsByHash(r.hash)} className='text-decoration-none'>{r.number}
+                                                    </Link>
                                                     <p className='mb-0 text-secondary small'>{r.time}</p>
                                                 </td>
                                                 <td>
@@ -63,7 +65,9 @@ const EthereumComponent = (props) => {
                                     {props.latestTransactionList.map((r, i) => (
                                             <tr key={i}>
                                                 <td className='text-truncate'>
-                                                    <Link to={{pathname:'/details', search:`?hash=${r.hash}`}} onClick={() => props.getBlockDetailsByHash(r.hash)} className="text-truncate">{r.hash}</Link>
+                                                    <Link to={{pathname:'/transaction-details', search:`?transaction=${r.hash}`}} 
+                                                        onClick={() => props.getTransactionDetailsByHash(r.hash)} className="text-truncate text-decoration-none">{r.hash}
+                                                    </Link>
                                                     <p className='mb-0 text-secondary small'>{r.time}</p>
                                                 </td>
                                                 <td>

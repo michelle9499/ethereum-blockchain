@@ -2,7 +2,7 @@ import './ethereum.style.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import { Card } from 'react-bootstrap';
 
-const EthereumDetailsComponent = (props) => {
+const EthereumBlockDetailsComponent = (props) => {
     return (
         <div>
             <div className='container'>
@@ -76,4 +76,4 @@ const EthereumDetailsComponent = (props) => {
     );
 }
 
-export default EthereumDetailsComponent;
+export default EthereumBlockDetailsComponent;

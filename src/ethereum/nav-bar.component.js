@@ -9,7 +9,7 @@ const NavBarComponent = (props) => {
 
     function onSearch() {
         props.getBlockDetailsByHash(props.hash)
-        navigate(`/details?hash=${props.hash}`);
+        navigate(`/block-details?block=${props.hash}`);
     }
 
     return (

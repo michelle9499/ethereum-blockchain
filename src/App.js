@@ -1,10 +1,11 @@
 import React from 'react'
 import EthereumComponent from "./ethereum/ethereum.component";
-import EthereumDetailsComponent from "./ethereum/ethereum-details.component";
+import EthereumBlockDetailsComponent from "./ethereum/ethereum-block-details.component";
 import NavBarComponent from './ethereum//nav-bar.component';
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Web3 from 'web3';
 import moment from 'moment'
+import EthereumTransactionDetailsComponent from './ethereum/ethereum-transaction-details.component';
 
 //example hash for testing: 0x9de7053d6a50d295a58ba0d2943598850dff5bd5a1ce43c85b62500cc0bd987d
 
@@ -37,6 +38,22 @@ class App extends React.Component {
         sha3Uncles: undefined,
         stateRoot: undefined,
         nonce: undefined
+      },
+      transactionDetails: {
+        hash: undefined,
+        status: undefined,
+        blockNumber: undefined,
+        blockHash: undefined,
+        timestamp: '',
+        from: undefined,
+        to: undefined,
+        value: undefined,
+        transactionFee: undefined,
+        gasPrice: undefined,
+        gasLimitAndUsageByTxn: undefined,
+        gasFee: undefined,
+        burntFee: undefined,
+        other: undefined
       }
     }
   }
@@ -137,52 +154,102 @@ class App extends React.Component {
 
   //get block details by hash
   getBlockDetailsByHash = async(hash) => {
-    let block = await web3.eth.getBlock(hash);
-    let transactionCount = await web3.eth.getBlockTransactionCount(hash);
-    let uncleCount = await web3.eth.getBlockUncleCount(hash);
-    let gasPrice = await  web3.eth.getGasPrice();
+    if(hash) {
+      let block = await web3.eth.getBlock(hash);
+      let transactionCount = await web3.eth.getBlockTransactionCount(hash);
+      let uncleCount = await web3.eth.getBlockUncleCount(hash);
+      let gasPrice = await  web3.eth.getGasPrice();
 
-    let dateTime = moment(block.timestamp*1000);
+      let dateTime = moment(block.timestamp*1000);
 
-    //base fee per gas
-    let baseFeePerGasInEther = this.convertFromWei(this.convertToBN(block.baseFeePerGas), 'ether');
-    let baseFeePerGasInGwei = this.convertFromWei(this.convertToBN(block.baseFeePerGas), 'gwei');
+      //base fee per gas
+      let baseFeePerGasInEther = block.baseFeePerGas ? this.convertFromWei(this.convertToBN(block.baseFeePerGas), 'ether') : null;
+      let baseFeePerGasInGwei = block.baseFeePerGas ? this.convertFromWei(this.convertToBN(block.baseFeePerGas), 'gwei') : null;
 
-    //burnt fees
-    let burntFees = this.calBurntFees(block.gasLimit, block.baseFeePerGas);
-    let burtFeesInEther = this.convertFromWei(this.convertToBN(burntFees), 'ether');
+      //burnt fees
+      let burntFees = (block.gasLimit && block.baseFeePerGas) ? this.calBurntFees(block.gasLimit, block.baseFeePerGas) : 0;
+      let burtFeesInEther = this.convertFromWei(this.convertToBN(burntFees), 'ether');
 
-    //txn fee
-    let txnFee = this.calTxnFees(block.gasLimit, gasPrice);
-    let txnFeeInEther = this.convertFromWei(this.convertToBN(txnFee), 'ether')
+      //txn fee
+      let txnFee = (block.gasLimit && gasPrice) ? this.calTxnFees(block.gasLimit, gasPrice) : 0;
+      let txnFeeInEther = this.convertFromWei(this.convertToBN(txnFee), 'ether')
 
-    //block rewards
-    let blockRewards = this.calBlockRewards(txnFee, burntFees);
-    let blockRewardsInEther = this.convertFromWei(this.convertToBN(blockRewards), 'ether');
+      //block rewards
+      let blockRewards = this.calBlockRewards(txnFee, burntFees);
+      let blockRewardsInEther = this.convertFromWei(this.convertToBN(blockRewards), 'ether');
 
-    this.setState(prevState => {
-      let blockDetails = Object.assign({}, prevState.blockDetails);
-      blockDetails.number = block.number
-      blockDetails.timestamp = `${dateTime.fromNow()} (${dateTime.format('YYYY-MM-DD hh:mm:ss a')})`
-      blockDetails.transactions = `${transactionCount} transactions in this block`
-      blockDetails.miner = block.miner
-      blockDetails.blockReward = `${blockRewardsInEther} Ether (2 + ${txnFeeInEther} - ${burtFeesInEther})`
-      blockDetails.unclesReward = uncleCount
-      blockDetails.difficulty= block.difficulty
-      blockDetails.totalDifficulty= parseInt(block.totalDifficulty).toLocaleString()
-      blockDetails.size= `${block.size.toLocaleString()} bytes`
-      blockDetails.gasUsed= block.gasUsed.toLocaleString()
-      blockDetails.gasLimit= block.gasLimit.toLocaleString()
-      blockDetails.baseFeePerGas= `${baseFeePerGasInEther} Ether (${baseFeePerGasInGwei} Gwei)`
-      blockDetails.burntFees= `${burtFeesInEther} Ether`
-      blockDetails.extraData= block.extraData
-      blockDetails.hash= block.hash
-      blockDetails.parentHash= block.parentHash
-      blockDetails.sha3Uncles= block.sha3Uncles
-      blockDetails.stateRoot= block.stateRoot
-      blockDetails.nonce= block.nonce
-      return { blockDetails }
-    });
+      this.setState(prevState => {
+        let blockDetails = Object.assign({}, prevState.blockDetails);
+        blockDetails.number = block.number
+        blockDetails.timestamp = `${dateTime.fromNow()} (${dateTime.format('YYYY-MM-DD hh:mm:ss a')})`
+        blockDetails.transactions = `${transactionCount ? transactionCount : 0} transactions in this block`
+        blockDetails.miner = block.miner ? block.miner : '-'
+        blockDetails.blockReward = `${blockRewardsInEther} Ether (2 + ${txnFeeInEther} - ${burtFeesInEther})`
+        blockDetails.unclesReward = uncleCount ? uncleCount : 0
+        blockDetails.difficulty = block.difficulty ? block.difficulty : 0;
+        blockDetails.totalDifficulty= block.totalDifficulty ? parseInt(block.totalDifficulty).toLocaleString() : '-'
+        blockDetails.size = block.size ? `${block.size.toLocaleString()} bytes` : '-'
+        blockDetails.gasUsed = block.gasUsed ? block.gasUsed.toLocaleString() : '-'
+        blockDetails.gasLimit = block.gasLimit ? block.gasLimit.toLocaleString() : '-'
+        blockDetails.baseFeePerGas = block.baseFeePerGas ? `${baseFeePerGasInEther} Ether (${baseFeePerGasInGwei} Gwei)` : ''
+        blockDetails.burntFees = `${burtFeesInEther} Ether`
+        blockDetails.extraData = block.extraData ? block.extraData : '-'
+        blockDetails.hash = block.hash ? block.hash : '-'
+        blockDetails.parentHash = block.parentHash ? block.parentHash : '-'
+        blockDetails.sha3Uncles = block.sha3Uncles ? block.sha3Uncles : '-'
+        blockDetails.stateRoot = block.stateRoot ? block.stateRoot : '-'
+        blockDetails.nonce = block.nonce ? block.nonce : '-'
+        return { blockDetails }
+      });
+    }
+  }
+
+  //get transaction details by hash
+  getTransactionDetailsByHash = async(hash) => {
+    if(hash) {
+      let transaction = await web3.eth.getTransaction(hash);
+      let block = await web3.eth.getBlock(transaction.blockNumber);
+      let transactionReceipt = await web3.eth.getTransactionReceipt(hash);
+
+      const dateTime = moment(block.timestamp*1000);
+
+      //gas price
+      let gasPriceInEther = transaction.gasPrice ? this.convertFromWei(this.convertToBN(transaction.gasPrice), 'ether') : null;
+      let gasPriceInGwei = transaction.gasPrice ? this.convertFromWei(this.convertToBN(transaction.gasPrice), 'gwei') : null;
+
+      //txn fee
+      let txnFee = (block.gasLimit && transaction.gasPrice) ? this.calTxnFees(block.gasLimit, transaction.gasPrice) : 0;
+      let txnFeeInEther = this.convertFromWei(this.convertToBN(txnFee), 'ether');
+
+      //gas fee
+      let baseFeePerGasInGwei = block.baseFeePerGas ? this.convertFromWei(this.convertToBN(block.baseFeePerGas), 'gwei') : null;
+      let maxFeePerGasInGwei = transaction.maxFeePerGas ? this.convertFromWei(this.convertToBN(transaction.maxFeePerGas), 'gwei'): null;
+      let maxPriorityFeePerGasInGwei = transaction.maxPriorityFeePerGas ? this.convertFromWei(this.convertToBN(transaction.maxPriorityFeePerGas), 'gwei') : null;
+
+      //burnt fees
+      let burntFees = (block.gasLimit && block.baseFeePerGas) ? this.calBurntFees(block.gasLimit, block.baseFeePerGas) : 0;
+      let burtFeesInEther = this.convertFromWei(this.convertToBN(burntFees), 'ether');
+
+      // set state for transaction details
+      this.setState(prevState => {
+        let transactionDetails = Object.assign({}, prevState.transactionDetails);
+        transactionDetails.hash = transaction.hash
+        transactionDetails.status = transactionReceipt.status ? 'Success' : 'Failed'
+        transactionDetails.blockNumber = transaction.blockNumber ? transaction.blockNumber : 0
+        transactionDetails.blockHash = transaction.blockHash ? transaction.blockHash : '-'
+        transactionDetails.timestamp = `${dateTime.fromNow()} (${dateTime.format('YYYY-MM-DD hh:mm:ss a')})`
+        transactionDetails.from = transaction.from ? transaction.from : '-'
+        transactionDetails.to = transaction.to ? transaction.to : '-'
+        transactionDetails.value= transaction.value ? `${this.convertFromWei(this.convertToBN(transaction.value), 'ether')} Ether` : '-'
+        transactionDetails.transactionFee= `${txnFeeInEther} Ether`
+        transactionDetails.gasPrice= (gasPriceInEther ? `${gasPriceInEther} Ether` : '' )+ (gasPriceInGwei ? ` (${gasPriceInGwei} Gwei)` : '')
+        transactionDetails.gasLimitAndUsageByTxn= `${transaction.gas ? transaction.gas.toLocaleString() : '-'}  |  ${transactionReceipt.gasUsed ? transactionReceipt.gasUsed.toLocaleString() : '-'}`
+        transactionDetails.gasFee= (baseFeePerGasInGwei ? `Base: ${baseFeePerGasInGwei} Gwei` : '') + (maxFeePerGasInGwei ? `| Max: ${maxFeePerGasInGwei} Gwei` : '') +(maxPriorityFeePerGasInGwei ? `| Max Priority: ${maxPriorityFeePerGasInGwei}Gwei` : '')
+        transactionDetails.burntFee= `${burtFeesInEther} Ether`
+        transactionDetails.other= `Txn Type: ${transaction.type ? transaction.type : '-'} | Nonce: ${transaction.nonce ? transaction.nonce : 0} | Position: ${transaction.index ? transaction.index : '-'}`
+        return { transactionDetails }
+      });
+    }
   }
 
   //handle search input change
@@ -191,21 +258,33 @@ class App extends React.Component {
   }
 
   componentDidMount(){
-    const queryParams = new URLSearchParams(window.location.search);
+    let queryParams = new URLSearchParams(window.location.search);
 
     this.getLatestBlock();
     this.getLatestTransaction();
-    this.getBlockDetailsByHash(queryParams.get('hash'));
+    this.getBlockDetailsByHash(queryParams.get('block'));
+    this.getTransactionDetailsByHash(queryParams.get('transaction'));
   }
 
   render() {
     return(
       <div>
         <BrowserRouter>
-          <NavBarComponent hash={this.state.hash} onChangeKeyword={this.handleKeywordschange}  getBlockDetailsByHash={this.getBlockDetailsByHash}/>
+          <NavBarComponent 
+            hash={this.state.hash} 
+            onChangeKeyword={this.handleKeywordschange} 
+            getBlockDetailsByHash={this.getBlockDetailsByHash}
+            getTransactionDetailsByHash={this.getTransactionDetailsByHash}
+          />
           <Routes>
-              <Route path="/" element={<EthereumComponent latestBlockList={this.state.latestBlockList} latestTransactionList={this.state.latestTransactionList} getBlockDetailsByHash={this.getBlockDetailsByHash} />} />
-              <Route exact path="/details" element={<EthereumDetailsComponent blockDetails={this.state.blockDetails}/>} />
+              <Route path="/" element={<EthereumComponent 
+                latestBlockList={this.state.latestBlockList} 
+                latestTransactionList={this.state.latestTransactionList} 
+                getBlockDetailsByHash={this.getBlockDetailsByHash} 
+                getTransactionDetailsByHash={this.getTransactionDetailsByHash} 
+              />} />
+              <Route path="/block-details" element={<EthereumBlockDetailsComponent blockDetails={this.state.blockDetails}/>} />
+              <Route path="/transaction-details" element={<EthereumTransactionDetailsComponent transactionDetails={this.state.transactionDetails}/>} />
           </Routes>
         </BrowserRouter>
       </div>
