@@ -4,7 +4,6 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import { Table, Card } from 'react-bootstrap';
-import NavBarComponent from './nav-bar.component';
 import { Link } from 'react-router-dom';
 
 const options = {
@@ -19,7 +18,6 @@ const options = {
 const EthereumComponent = (props) => {
     return (
         <div>
-            <NavBarComponent />
             <div className='container'>
                 <div className="my-4">
                     <HighchartsReact
@@ -38,7 +36,7 @@ const EthereumComponent = (props) => {
                                         {props.latestBlockList.map((r, i) => (
                                             <tr key={i}>
                                                 <td>
-                                                    <Link to={`/details/${r.hash}`} onClick={() => props.getBlockDetailsByHash(r.hash)}>{r.number}</Link>
+                                                    <Link to={{pathname:'/details', search:`?hash=${r.hash}`}} onClick={() => props.getBlockDetailsByHash(r.hash)}>{r.number}</Link>
                                                     <p className='mb-0 text-secondary small'>{r.time}</p>
                                                 </td>
                                                 <td>

@@ -1,16 +1,22 @@
 import React from 'react'
 import EthereumComponent from "./ethereum/ethereum.component";
 import EthereumDetailsComponent from "./ethereum/ethereum-details.component";
+import NavBarComponent from './ethereum//nav-bar.component';
+import { Navbar, Button } from 'react-bootstrap';
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Web3 from 'web3';
 import moment from 'moment'
 
+//example hash for testing: 0x9de7053d6a50d295a58ba0d2943598850dff5bd5a1ce43c85b62500cc0bd987d
+
 const web3 = new Web3(`${process.env.REACT_APP_RPC_HTTPURL}`)
 
 class App extends React.Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
+    console.log(this.props)
     this.state = {
+      hash: undefined,
       latestBlockList: [],
       blockDetails: {
         number: undefined,
@@ -154,20 +160,30 @@ class App extends React.Component {
     });
   }
 
+  //handle search input change
+  handleKeywordschange = (e) => {
+    this.setState({hash: e.target.value})
+  }
+
   componentDidMount(){
+    const queryParams = new URLSearchParams(window.location.search);
+
     this.getLatestBlock();
     this.getLatestTransaction();
-    this.getBlockDetailsByHash();
+    this.getBlockDetailsByHash(queryParams.get('hash'));
   }
 
   render() {
     return(
-      <BrowserRouter>
-        <Routes>
-            <Route path="/" element={<EthereumComponent latestBlockList={this.state.latestBlockList} getBlockDetailsByHash={this.getBlockDetailsByHash}/>} />
-            <Route exact path="/details/:hash" element={<EthereumDetailsComponent blockDetails={this.state.blockDetails} getBlockDetailsByHash={this.getBlockDetailsByHash}/>} />
-        </Routes>
-      </BrowserRouter>
+      <div>
+        <BrowserRouter>
+          <NavBarComponent hash={this.state.hash} onChangeKeyword={this.handleKeywordschange}  getBlockDetailsByHash={this.getBlockDetailsByHash}/>
+          <Routes>
+              <Route path="/" element={<EthereumComponent latestBlockList={this.state.latestBlockList} getBlockDetailsByHash={this.getBlockDetailsByHash} />} />
+              <Route exact path="/details" element={<EthereumDetailsComponent blockDetails={this.state.blockDetails}/>} />
+          </Routes>
+        </BrowserRouter>
+      </div>
     )
   }
 }

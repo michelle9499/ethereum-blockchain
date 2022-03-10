@@ -4,11 +4,12 @@ import { Navbar, Button } from 'react-bootstrap';
 
 import { useNavigate } from "react-router-dom";
 
-const NavBarComponent = () => {
+const NavBarComponent = (props) => {
     const navigate = useNavigate();
 
-    const onSearch = (path) => {
-        navigate(path);
+    function onSearch() {
+        props.getBlockDetailsByHash(props.hash)
+        navigate(`/details?hash=${props.hash}`);
     }
 
     return (
@@ -16,13 +17,16 @@ const NavBarComponent = () => {
             <div className='container'>
                 <Navbar.Brand href="../"><h4>Ethereum Blockchain</h4></Navbar.Brand>
                 <form className="d-flex">
-                <input
-                    type="search"
-                    placeholder="Search by hash"
-                    className="form-control me-2"
-                />
-                <Button variant="outline-secondary" onClick={() => onSearch("/details")}>Search</Button>
-            </form>
+                    <input
+                        type="text"
+                        placeholder="Search by hash"
+                        className="form-control me-2"
+                        name='search'
+                        autoComplete='off'
+                        onChange={props.onChangeKeyword}
+                    />
+                    <Button variant="outline-secondary" onClick={onSearch}>Search</Button>
+                </form>
             </div>
         </Navbar>
     );
