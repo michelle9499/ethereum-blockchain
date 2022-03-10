@@ -5,6 +5,7 @@ import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import { Table, Card } from 'react-bootstrap';
 import NavBarComponent from './nav-bar.component';
+import { Link } from 'react-router-dom';
 
 const options = {
     title: {
@@ -37,7 +38,7 @@ const EthereumComponent = (props) => {
                                         {props.latestBlockList.map((r, i) => (
                                             <tr key={i}>
                                                 <td>
-                                                    <span>{r.number}</span> 
+                                                    <Link to={`/details/${r.hash}`} onClick={() => props.getBlockDetailsByHash(r.hash)}>{r.number}</Link>
                                                     <p className='mb-0 text-secondary small'>{r.time}</p>
                                                 </td>
                                                 <td>

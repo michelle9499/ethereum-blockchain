@@ -36,40 +36,57 @@ class App extends React.Component {
     }
   }
 
+  calBurntFees(gasLimit, baseFeePerGas) {
+    return gasLimit*baseFeePerGas
+  }
+
+  calTxnFees(gasLimit, gasPrice){
+    return gasLimit*gasPrice
+  }
+
+  calBlockRewards(txnFee, burntFee) {
+    return 2000000000000000000+txnFee-burntFee
+  }
+
+  convertToBN(data){
+    return web3.utils.toBN(data)
+  }
+
+  convertToEther(data, unit) {
+    return web3.utils.fromWei(data, unit)
+  }
+
   //get latest 10 blocks
-  getLatestBlock(){
+  getLatestBlock() {
     for (let i=0; i < 10; i++) {
-      //get latest block number
       web3.eth.getBlockNumber()
-        .then((n) => {
-          const number = n - i
-          web3.eth.getBlock(number)
-            .then((lb) => {
-              let latestBlockList = this.state.latestBlockList;
-              let dateTime = moment(lb.timestamp*1000)
+        .then(async(blockNumber) => {
+          //get latest block number
+          const number = blockNumber - i;
+          const blockNumbers = await web3.eth.getBlock(number);
+          const transactionCount = await web3.eth.getBlockTransactionCount(blockNumbers.hash);
 
-              //get block transaction count
-              web3.eth.getBlockTransactionCount(lb.hash).then((r) => {
+          let latestBlockList = this.state.latestBlockList;
+          let dateTime = moment(blockNumbers.timestamp*1000);
 
-                //push recent block into array
-                latestBlockList.push({
-                  number: lb.number,
-                  transactionCount: r,
-                  miner: lb.miner,
-                  time: dateTime.fromNow()
-                });
-                
-                //sorting block by number
-                latestBlockList.sort((a, b) => {
-                  if (a.number > b.number) {return -1;}
-                  if (a.number < b.number) {return 1;}
-                  return 0;
-                })
-
-                //set state for recent block
-                this.setState({latestBlockList: latestBlockList});
-              })
+          //push recent block into array
+          latestBlockList.push({
+            number: blockNumbers.number,
+            transactionCount: transactionCount,
+            miner: blockNumbers.miner,
+            time: dateTime.fromNow(),
+            hash: blockNumbers.hash
           });
+          
+          //sorting block by number
+          latestBlockList.sort((a, b) => {
+            if (a.number > b.number) {return -1;}
+            if (a.number < b.number) {return 1;}
+            return 0;
+          })
+
+          //set state for recent block
+          this.setState({latestBlockList: latestBlockList});
         });
     }
   }
@@ -86,77 +103,69 @@ class App extends React.Component {
         
       });
   }
-  
+
   //get block details by hash
-  getBlockDetailsByHash(hash){
-    web3.eth.getBlock(hash)
-      .then((r) => {
-        let dateTime = moment(r.timestamp*1000)
+  getBlockDetailsByHash = async(hash) => {
+    const block = await web3.eth.getBlock(hash);
+    const transactionCount = await web3.eth.getBlockTransactionCount(hash);
+    const uncleCount = await web3.eth.getBlockUncleCount(hash);
+    const gasPrice = await  web3.eth.getGasPrice();
 
-        //base fee per gas
-        const baseFeePerGasToBN = web3.utils.toBN(r.baseFeePerGas)
-        const baseFeePerGasEther = web3.utils.fromWei(baseFeePerGasToBN, 'ether')
-        const baseFeePerGasGwei = web3.utils.fromWei(baseFeePerGasToBN, 'gwei')
+    const dateTime = moment(block.timestamp*1000);
 
-        //burnt fees
-        const burntFees = r.gasLimit*r.baseFeePerGas
-        const burntFeesToBN = web3.utils.toBN(burntFees)
-        const burntFeesToEther = web3.utils.fromWei(burntFeesToBN, 'ether')
+    //base fee per gas
+    const baseFeePerGasInEther = this.convertToEther(this.convertToBN(block.baseFeePerGas), 'ether');
+    const baseFeePerGasInGwei = this.convertToEther(this.convertToBN(block.baseFeePerGas), 'gwei');
 
-        //txn fee
-        const gasPrice = web3.eth.getGasPrice()
-        gasPrice.then((gp) => {
-          const txnFee = r.gasLimit * gp
-          const txnFeeToBN = web3.utils.toBN(txnFee)
-          const txnFeeToEther = web3.utils.fromWei(txnFeeToBN, 'ether')
+    //burnt fees
+    const burntFees = this.calBurntFees(block.gasLimit, block.baseFeePerGas);
+    const burtFeesInEther = this.convertToEther(this.convertToBN(burntFees), 'ether');
 
-          //block rewards
-          const blockRewardToBN = web3.utils.toBN(2000000000000000000+txnFee-burntFees)
-          const brFromWei= web3.utils.fromWei(blockRewardToBN, 'ether')
+    //txn fee
+    const txnFee = this.calTxnFees(block.gasLimit, gasPrice);
+    const txnFeeInEther = this.convertToEther(this.convertToBN(txnFee), 'ether')
 
-          web3.eth.getBlockTransactionCount(r.hash).then((transactionCount) => {
-            web3.eth.getBlockUncleCount(r.hash).then((uncleCount) => {
-              this.setState(prevState => {
-                let blockDetails = Object.assign({}, prevState.blockDetails);
-                blockDetails.number = r.number
-                blockDetails.timestamp = `${dateTime.fromNow()} (${dateTime.format('YYYY-MM-DD hh:mm:ss a')})`
-                blockDetails.transactions = `${transactionCount} transactions in this block`
-                blockDetails.miner = r.miner
-                blockDetails.blockReward = `${brFromWei} Ether (2 + ${txnFeeToEther} - ${burntFeesToEther})`
-                blockDetails.unclesReward = uncleCount
-                blockDetails.difficulty= r.difficulty
-                blockDetails.totalDifficulty= parseInt(r.totalDifficulty).toLocaleString()
-                blockDetails.size= `${r.size.toLocaleString()} bytes`
-                blockDetails.gasUsed= r.gasUsed.toLocaleString()
-                blockDetails.gasLimit= r.gasLimit.toLocaleString()
-                blockDetails.baseFeePerGas= `${baseFeePerGasEther} Ether (${baseFeePerGasGwei} Gwei)`
-                blockDetails.burntFees= `${burntFeesToEther} Ether`
-                blockDetails.extraData= r.extraData
-                blockDetails.hash= r.hash
-                blockDetails.parentHash= r.parentHash
-                blockDetails.sha3Uncles= r.sha3Uncles
-                blockDetails.stateRoot= r.stateRoot
-                blockDetails.nonce= r.nonce
-                return { blockDetails }
-              });
-            })
-          });
-        });
-      });
+    //block rewards
+    const blockRewards = this.calBlockRewards(txnFee, burntFees);
+    const blockRewardsInEther = this.convertToEther(this.convertToBN(blockRewards), 'ether');
+
+    this.setState(prevState => {
+      let blockDetails = Object.assign({}, prevState.blockDetails);
+      blockDetails.number = block.number
+      blockDetails.timestamp = `${dateTime.fromNow()} (${dateTime.format('YYYY-MM-DD hh:mm:ss a')})`
+      blockDetails.transactions = `${transactionCount} transactions in this block`
+      blockDetails.miner = block.miner
+      blockDetails.blockReward = `${blockRewardsInEther} Ether (2 + ${txnFeeInEther} - ${burtFeesInEther})`
+      blockDetails.unclesReward = uncleCount
+      blockDetails.difficulty= block.difficulty
+      blockDetails.totalDifficulty= parseInt(block.totalDifficulty).toLocaleString()
+      blockDetails.size= `${block.size.toLocaleString()} bytes`
+      blockDetails.gasUsed= block.gasUsed.toLocaleString()
+      blockDetails.gasLimit= block.gasLimit.toLocaleString()
+      blockDetails.baseFeePerGas= `${baseFeePerGasInEther} Ether (${baseFeePerGasInGwei} Gwei)`
+      blockDetails.burntFees= `${burtFeesInEther} Ether`
+      blockDetails.extraData= block.extraData
+      blockDetails.hash= block.hash
+      blockDetails.parentHash= block.parentHash
+      blockDetails.sha3Uncles= block.sha3Uncles
+      blockDetails.stateRoot= block.stateRoot
+      blockDetails.nonce= block.nonce
+      return { blockDetails }
+    });
   }
 
   componentDidMount(){
     this.getLatestBlock();
     this.getLatestTransaction();
-    this.getBlockDetailsByHash('0x1b43a0e61c5f1cecf0513653e09935f7236bbc3f794ccedc592cd5a4a49c661f');
+    this.getBlockDetailsByHash();
   }
 
   render() {
     return(
       <BrowserRouter>
         <Routes>
-            <Route path="/" element={<EthereumComponent latestBlockList={this.state.latestBlockList}/>} />
-            <Route path="/details" element={<EthereumDetailsComponent blockDetails={this.state.blockDetails}/>} />
+            <Route path="/" element={<EthereumComponent latestBlockList={this.state.latestBlockList} getBlockDetailsByHash={this.getBlockDetailsByHash}/>} />
+            <Route exact path="/details/:hash" element={<EthereumDetailsComponent blockDetails={this.state.blockDetails} getBlockDetailsByHash={this.getBlockDetailsByHash}/>} />
         </Routes>
       </BrowserRouter>
     )
