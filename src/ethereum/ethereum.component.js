@@ -43,6 +43,7 @@ const EthereumComponent = (props) => {
                                                     <p className='mb-0'>Miner <span>({r.miner})</span></p> 
                                                     <p className='mb-0 text-secondary small'>{r.transactionCount} txns</p>
                                                 </td>
+                                                <td></td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -57,11 +58,21 @@ const EthereumComponent = (props) => {
                                 <hr />
                                 <Table responsive>
                                     <tbody>
-                                        <tr>
-                                            <td>1433630</td>
-                                            <td>Miner Hiveon Pol</td>
-                                            <td>2.09742 Eth</td>
-                                        </tr>
+                                    {props.latestTransactionList.map((r, i) => (
+                                            <tr key={i}>
+                                                <td>
+                                                    <Link to={{pathname:'/details', search:`?hash=${r.hash}`}} onClick={() => props.getBlockDetailsByHash(r.hash)} className="text-truncate">{r.hash}</Link>
+                                                    <p className='mb-0 text-secondary small'>{r.time}</p>
+                                                </td>
+                                                <td>
+                                                    <p className='mb-0'>From: <span>{r.from}</span></p> 
+                                                    <p className='mb-0'>To: <span>{r.to}</span></p>
+                                                </td>
+                                                <td>
+                                                    <p className='mb-0'><span>{r.value} Eth</span></p> 
+                                                </td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </Table>
                             </Card.Body>

@@ -18,6 +18,7 @@ class App extends React.Component {
     this.state = {
       hash: undefined,
       latestBlockList: [],
+      latestTransactionList: [],
       blockDetails: {
         number: undefined,
         timestamp: '',
@@ -43,23 +44,23 @@ class App extends React.Component {
   }
 
   calBurntFees(gasLimit, baseFeePerGas) {
-    return gasLimit*baseFeePerGas
+    return gasLimit*baseFeePerGas;
   }
 
   calTxnFees(gasLimit, gasPrice){
-    return gasLimit*gasPrice
+    return gasLimit*gasPrice;
   }
 
   calBlockRewards(txnFee, burntFee) {
-    return 2000000000000000000+txnFee-burntFee
+    return 2000000000000000000+txnFee-burntFee;
   }
 
   convertToBN(data){
-    return web3.utils.toBN(data)
+    return web3.utils.toBN(data);
   }
 
   convertToEther(data, unit) {
-    return web3.utils.fromWei(data, unit)
+    return web3.utils.fromWei(data, unit);
   }
 
   //get latest 10 blocks
@@ -99,15 +100,30 @@ class App extends React.Component {
 
   //get latest 10 transactions
   getLatestTransaction() {
-    web3.eth.getBlockNumber()
-      .then((n) => {
-        // console.log(n);
-        // web3.eth.getTransactionFromBlock(n.number)
-        //   .then((t) => {
-        //     console.log(t)
-        //   });
-        
+    web3.eth.getBlockNumber().then((lastBlockNumber) => {
+      web3.eth.getBlock(lastBlockNumber).then((block) => {
+        for (let i=1; i <= 10; i++) {
+          const lastTransaction = block.transactions[block.transactions.length - i];
+            web3.eth.getTransaction(lastTransaction).then((transaction) => {
+              // console.log(transaction)
+            let latestTransactionList = this.state.latestTransactionList;
+            let dateTime = moment(block.timestamp*1000);
+
+            // push recent transaction into array
+            latestTransactionList.push({
+              hash: transaction.hash,
+              from: transaction.from,
+              to: transaction.to,
+              time: dateTime.fromNow(),
+              value: this.convertToEther(this.convertToBN(transaction.value), 'ether')
+            });
+
+            //set state for recent block
+            this.setState({latestTransactionList: latestTransactionList});
+          });
+        }
       });
+    });
   }
 
   //get block details by hash
@@ -179,7 +195,7 @@ class App extends React.Component {
         <BrowserRouter>
           <NavBarComponent hash={this.state.hash} onChangeKeyword={this.handleKeywordschange}  getBlockDetailsByHash={this.getBlockDetailsByHash}/>
           <Routes>
-              <Route path="/" element={<EthereumComponent latestBlockList={this.state.latestBlockList} getBlockDetailsByHash={this.getBlockDetailsByHash} />} />
+              <Route path="/" element={<EthereumComponent latestBlockList={this.state.latestBlockList} latestTransactionList={this.state.latestTransactionList} getBlockDetailsByHash={this.getBlockDetailsByHash} />} />
               <Route exact path="/details" element={<EthereumDetailsComponent blockDetails={this.state.blockDetails}/>} />
           </Routes>
         </BrowserRouter>
