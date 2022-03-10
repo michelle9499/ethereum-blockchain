@@ -2,7 +2,6 @@ import React from 'react'
 import EthereumComponent from "./ethereum/ethereum.component";
 import EthereumDetailsComponent from "./ethereum/ethereum-details.component";
 import NavBarComponent from './ethereum//nav-bar.component';
-import { Navbar, Button } from 'react-bootstrap';
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Web3 from 'web3';
 import moment from 'moment'
@@ -12,9 +11,8 @@ import moment from 'moment'
 const web3 = new Web3(`${process.env.REACT_APP_RPC_HTTPURL}`)
 
 class App extends React.Component {
-  constructor(props) {
-    super(props);
-    console.log(this.props)
+  constructor() {
+    super();
     this.state = {
       hash: undefined,
       latestBlockList: [],
@@ -59,7 +57,7 @@ class App extends React.Component {
     return web3.utils.toBN(data);
   }
 
-  convertToEther(data, unit) {
+  convertFromWei(data, unit) {
     return web3.utils.fromWei(data, unit);
   }
 
@@ -69,12 +67,22 @@ class App extends React.Component {
       web3.eth.getBlockNumber()
         .then(async(blockNumber) => {
           //get latest block number
-          const number = blockNumber - i;
-          const blockNumbers = await web3.eth.getBlock(number);
-          const transactionCount = await web3.eth.getBlockTransactionCount(blockNumbers.hash);
+          let number = blockNumber - i;
+          let blockNumbers = await web3.eth.getBlock(number);
+          let transactionCount = await web3.eth.getBlockTransactionCount(blockNumbers.hash);
+          let gasPrice = await web3.eth.getGasPrice();
 
           let latestBlockList = this.state.latestBlockList;
           let dateTime = moment(blockNumbers.timestamp*1000);
+
+          //burnt fees
+          let burntFees = this.calBurntFees(blockNumbers.gasLimit, blockNumbers.baseFeePerGas);
+
+          //txn fee
+          let txnFee = this.calTxnFees(blockNumbers.gasLimit, gasPrice);
+
+          //block rewards
+          let blockRewards = this.calBlockRewards(txnFee, burntFees);
 
           //push recent block into array
           latestBlockList.push({
@@ -82,7 +90,8 @@ class App extends React.Component {
             transactionCount: transactionCount,
             miner: blockNumbers.miner,
             time: dateTime.fromNow(),
-            hash: blockNumbers.hash
+            hash: blockNumbers.hash,
+            blockRewards: this.convertFromWei(this.convertToBN(blockRewards), 'ether')
           });
           
           //sorting block by number
@@ -103,7 +112,7 @@ class App extends React.Component {
     web3.eth.getBlockNumber().then((lastBlockNumber) => {
       web3.eth.getBlock(lastBlockNumber).then((block) => {
         for (let i=1; i <= 10; i++) {
-          const lastTransaction = block.transactions[block.transactions.length - i];
+          let lastTransaction = block.transactions[block.transactions.length - i];
             web3.eth.getTransaction(lastTransaction).then((transaction) => {
               // console.log(transaction)
             let latestTransactionList = this.state.latestTransactionList;
@@ -115,7 +124,7 @@ class App extends React.Component {
               from: transaction.from,
               to: transaction.to,
               time: dateTime.fromNow(),
-              value: this.convertToEther(this.convertToBN(transaction.value), 'ether')
+              value: this.convertFromWei(this.convertToBN(transaction.value), 'ether')
             });
 
             //set state for recent block
@@ -128,28 +137,28 @@ class App extends React.Component {
 
   //get block details by hash
   getBlockDetailsByHash = async(hash) => {
-    const block = await web3.eth.getBlock(hash);
-    const transactionCount = await web3.eth.getBlockTransactionCount(hash);
-    const uncleCount = await web3.eth.getBlockUncleCount(hash);
-    const gasPrice = await  web3.eth.getGasPrice();
+    let block = await web3.eth.getBlock(hash);
+    let transactionCount = await web3.eth.getBlockTransactionCount(hash);
+    let uncleCount = await web3.eth.getBlockUncleCount(hash);
+    let gasPrice = await  web3.eth.getGasPrice();
 
-    const dateTime = moment(block.timestamp*1000);
+    let dateTime = moment(block.timestamp*1000);
 
     //base fee per gas
-    const baseFeePerGasInEther = this.convertToEther(this.convertToBN(block.baseFeePerGas), 'ether');
-    const baseFeePerGasInGwei = this.convertToEther(this.convertToBN(block.baseFeePerGas), 'gwei');
+    let baseFeePerGasInEther = this.convertFromWei(this.convertToBN(block.baseFeePerGas), 'ether');
+    let baseFeePerGasInGwei = this.convertFromWei(this.convertToBN(block.baseFeePerGas), 'gwei');
 
     //burnt fees
-    const burntFees = this.calBurntFees(block.gasLimit, block.baseFeePerGas);
-    const burtFeesInEther = this.convertToEther(this.convertToBN(burntFees), 'ether');
+    let burntFees = this.calBurntFees(block.gasLimit, block.baseFeePerGas);
+    let burtFeesInEther = this.convertFromWei(this.convertToBN(burntFees), 'ether');
 
     //txn fee
-    const txnFee = this.calTxnFees(block.gasLimit, gasPrice);
-    const txnFeeInEther = this.convertToEther(this.convertToBN(txnFee), 'ether')
+    let txnFee = this.calTxnFees(block.gasLimit, gasPrice);
+    let txnFeeInEther = this.convertFromWei(this.convertToBN(txnFee), 'ether')
 
     //block rewards
-    const blockRewards = this.calBlockRewards(txnFee, burntFees);
-    const blockRewardsInEther = this.convertToEther(this.convertToBN(blockRewards), 'ether');
+    let blockRewards = this.calBlockRewards(txnFee, burntFees);
+    let blockRewardsInEther = this.convertFromWei(this.convertToBN(blockRewards), 'ether');
 
     this.setState(prevState => {
       let blockDetails = Object.assign({}, prevState.blockDetails);

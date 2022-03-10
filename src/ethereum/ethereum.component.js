@@ -40,10 +40,12 @@ const EthereumComponent = (props) => {
                                                     <p className='mb-0 text-secondary small'>{r.time}</p>
                                                 </td>
                                                 <td>
-                                                    <p className='mb-0'>Miner <span>({r.miner})</span></p> 
+                                                    <p className='mb-0 text-truncate'>Miner ({r.miner})</p> 
                                                     <p className='mb-0 text-secondary small'>{r.transactionCount} txns</p>
                                                 </td>
-                                                <td></td>
+                                                <td className='text-right'>
+                                                    <p className='mb-0 text-secondary small'>{r.blockRewards} Eth</p> 
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -60,16 +62,16 @@ const EthereumComponent = (props) => {
                                     <tbody>
                                     {props.latestTransactionList.map((r, i) => (
                                             <tr key={i}>
-                                                <td>
+                                                <td className='text-truncate'>
                                                     <Link to={{pathname:'/details', search:`?hash=${r.hash}`}} onClick={() => props.getBlockDetailsByHash(r.hash)} className="text-truncate">{r.hash}</Link>
                                                     <p className='mb-0 text-secondary small'>{r.time}</p>
                                                 </td>
                                                 <td>
-                                                    <p className='mb-0'>From: <span>{r.from}</span></p> 
-                                                    <p className='mb-0'>To: <span>{r.to}</span></p>
+                                                    <p className='mb-0 text-truncate small'>From: {r.from}</p> 
+                                                    <p className='mb-0 text-truncate small'>To: {r.to}</p>
                                                 </td>
-                                                <td>
-                                                    <p className='mb-0'><span>{r.value} Eth</span></p> 
+                                                <td className='text-right'>
+                                                    <p className='mb-0 text-secondary small'>{r.value} Eth</p> 
                                                 </td>
                                             </tr>
                                         ))}
