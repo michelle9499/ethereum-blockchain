@@ -54,6 +54,24 @@ class App extends React.Component {
         gasFee: undefined,
         burntFee: undefined,
         other: undefined
+      },
+      chartOptions: {
+        title: {
+          text: 'Ethereum Tansation History in 7 Days'
+        },
+        yAxis: {
+          title: {
+              text: 'Transactions Per Day'
+          }
+        },
+        xAxis: {
+          categories: [],
+          tickInterval: 1
+        },
+        series: [{ 
+          name: 'Total Transactions',
+          data: [] 
+        }]
       }
     }
   }
@@ -252,6 +270,29 @@ class App extends React.Component {
     }
   }
 
+  get7Days() {
+    let days = []
+
+    for (let i=0; i < 7; i++) {
+      let day = moment().subtract(i, 'days');
+      days.push(day.format('MMMM, DD'))
+    }
+    return days;
+  }
+
+  updateSeries = () => {
+    this.setState({
+      chartOptions: {
+        xAxis: {
+          categories: this.get7Days()
+        },
+        series: [
+          { data: [1223143, 1190018, 1189898, 1204920, 1077844, 1147109, 1177640]}
+        ]
+      }
+    });
+  }
+
   //handle search input change
   handleKeywordschange = (e) => {
     this.setState({hash: e.target.value})
@@ -264,6 +305,8 @@ class App extends React.Component {
     this.getLatestTransaction();
     this.getBlockDetailsByHash(queryParams.get('block'));
     this.getTransactionDetailsByHash(queryParams.get('transaction'));
+    this.updateSeries();
+    this.getTotalTransactionsPerDay()
   }
 
   render() {
@@ -282,6 +325,7 @@ class App extends React.Component {
                 latestTransactionList={this.state.latestTransactionList} 
                 getBlockDetailsByHash={this.getBlockDetailsByHash} 
                 getTransactionDetailsByHash={this.getTransactionDetailsByHash} 
+                chartOptions={this.state.chartOptions}
               />} />
               <Route path="/block-details" element={<EthereumBlockDetailsComponent blockDetails={this.state.blockDetails}/>} />
               <Route path="/transaction-details" element={<EthereumTransactionDetailsComponent transactionDetails={this.state.transactionDetails}/>} />

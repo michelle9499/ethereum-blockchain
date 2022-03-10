@@ -6,15 +6,6 @@ import HighchartsReact from 'highcharts-react-official'
 import { Table, Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
-const options = {
-    title: {
-      text: 'Ethereum Tansation History in 7 Days'
-    },
-    series: [{
-      data: [1, 2, 3]
-    }]
-}
-  
 const EthereumComponent = (props) => {
     return (
         <div>
@@ -22,7 +13,7 @@ const EthereumComponent = (props) => {
                 <div className="my-4">
                     <HighchartsReact
                         highcharts={Highcharts}
-                        options={options}
+                        options={props.chartOptions}
                     />
                 </div>
                 <div className='row my-4'>
