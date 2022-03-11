@@ -17,7 +17,7 @@ const EthereumComponent = (props) => {
                     />
                 </div>
                 <div className='row my-4'>
-                    <div className='col-6'>
+                    <div className='col-md-6 col-12 mb-sm-4'>
                         <Card>
                             <Card.Body>
                                 <h5>Latest Block</h5>
@@ -46,7 +46,7 @@ const EthereumComponent = (props) => {
                             </Card.Body>
                         </Card>
                     </div>
-                    <div className='col-6'>
+                    <div className='col-md-6 col-12 mb-sm-4'>
                         <Card>
                             <Card.Body>
                                 <h5>Latest Transaction</h5>

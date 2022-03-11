@@ -306,7 +306,6 @@ class App extends React.Component {
     this.getBlockDetailsByHash(queryParams.get('block'));
     this.getTransactionDetailsByHash(queryParams.get('transaction'));
     this.updateSeries();
-    this.getTotalTransactionsPerDay()
   }
 
   render() {

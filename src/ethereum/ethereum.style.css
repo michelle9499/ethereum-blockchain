@@ -8,3 +8,9 @@
 .text-right {
     text-align: right;
 }
+
+@media screen and (max-width: 768px) {
+    .mb-sm-4 {
+        margin-bottom: 4%;
+    }
+}
